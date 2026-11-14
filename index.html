@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'">
+  <title>Lead Recovery Monitor | Software Finder</title>
+  <link rel="icon" href="brand/software-finder-logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img src="brand/software-finder-logo.svg" alt="Software Finder" width="272" height="34">
+    <div class="product">
+      <strong>Lead Recovery Monitor</strong>
+      <span>Live delivery status for every lead</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="live" id="live" role="status" aria-live="polite">
+      <span class="dot" aria-hidden="true"></span>
+      <span id="liveText">Connecting…</span>
+    </div>
+    <div class="refresh-info">
+      <span>Updated <strong id="updated">—</strong></span>
+      <span>Next refresh <strong id="countdown">—</strong></span>
+    </div>
+    <button type="button" class="ghost" id="themeBtn" aria-label="Switch between light and dark theme">Theme</button>
+  </div>
+</header>
+
+<main>
+  <section class="panel loader-panel" id="loader" hidden aria-labelledby="loaderTitle">
+    <h2 id="loaderTitle">View your data</h2>
+    <p class="muted">This is the public copy of the dashboard. It contains no lead data. Choose the data file exported from the monitor (<code>dashboard-export.json</code>). The file is read in your browser and is not uploaded anywhere.</p>
+    <label class="file-pick">
+      <span>Choose data file</span>
+      <input type="file" id="dataFile" accept=".json,application/json">
+    </label>
+  </section>
+
+  <section class="panel search-panel" aria-labelledby="searchTitle">
+    <h1 id="searchTitle">Search a Record ID</h1>
+    <p class="muted">Enter a Lead or Record ID to see whether it was delivered to the sheet, skipped, recovered, pending or failed.</p>
+    <form id="searchForm" class="search-form" role="search" autocomplete="off">
+      <label class="sr-only" for="searchInput">Record ID</label>
+      <input id="searchInput" name="recordId" inputmode="numeric" placeholder="Record ID (digits only)" maxlength="30" required>
+      <button type="submit" class="primary">Search</button>
+    </form>
+    <p class="form-error" id="searchError" role="alert"></p>
+    <div id="searchResult" aria-live="polite"></div>
+  </section>
+
+  <section class="toolbar" aria-label="Day">
+    <label class="inline">Day
+      <input type="date" id="dayInput" aria-describedby="dayNote">
+    </label>
+    <button type="button" class="ghost" id="todayBtn">Today</button>
+    <span class="muted" id="dayNote">Times in Pakistan time (PKT). A lead counts on the day its opportunity was marked.</span>
+  </section>
+
+  <p class="notice" id="notice" hidden></p>
+
+  <section class="cards" id="cards" aria-label="Summary"></section>
+
+  <section class="rates" id="rates" aria-label="Rates"></section>
+
+  <section class="grid-2">
+    <article class="panel">
+      <h2>Category performance</h2>
+      <div class="chips" id="catChips" role="group" aria-label="Filter by category"></div>
+      <div id="catBars"></div>
+      <div class="scroll"><table class="table" id="catTable"></table></div>
+    </article>
+    <article class="panel">
+      <h2>Successful vs failed</h2>
+      <div id="outcomeBar"></div>
+      <h2>Daily trend (last 14 days)</h2>
+      <div id="trend"></div>
+    </article>
+  </section>
+
+  <section class="grid-2">
+    <article class="panel">
+      <h2>Workflow health</h2>
+      <div id="flows"></div>
+      <h2>Connections</h2>
+      <div id="connections"></div>
+      <h2>Monitor resources</h2>
+      <div id="resources"></div>
+    </article>
+    <article class="panel">
+      <h2>Recent errors</h2>
+      <ul class="list" id="errors"></ul>
+      <h2>Recent alerts</h2>
+      <ul class="list" id="alerts"></ul>
+    </article>
+  </section>
+
+  <section class="panel" aria-labelledby="leadsTitle">
+    <h2 id="leadsTitle">Lead activity</h2>
+    <form class="filters" id="filters" autocomplete="off">
+      <label>Record ID <input type="search" id="fQ" inputmode="numeric" placeholder="starts with…" maxlength="30"></label>
+      <label>Category <select id="fCategory"><option value="">All</option></select></label>
+      <label>Status
+        <select id="fStatus">
+          <option value="">All</option>
+          <option value="DELIVERED">Delivered</option>
+          <option value="RECOVERED">Recovered</option>
+          <option value="SKIPPED">Skipped</option>
+          <option value="PENDING">Pending</option>
+          <option value="FAILED">Failed</option>
+        </select>
+      </label>
+      <label>Workflow
+        <select id="fFlow">
+          <option value="">All</option>
+          <option value="WF1">WF1 Opportunity</option>
+          <option value="WF2">WF2 First Cross</option>
+          <option value="WF3">WF3 Recon</option>
+          <option value="WF4">WF4 First Cross Recon</option>
+          <option value="WF5">WF5 SaaS Outreach</option>
+        </select>
+      </label>
+      <label>From <input type="date" id="fFrom"></label>
+      <label>To <input type="date" id="fTo"></label>
+      <label>Sort
+        <select id="fSort">
+          <option value="latest">Latest activity</option>
+          <option value="oldest">Oldest activity</option>
+        </select>
+      </label>
+      <button type="button" class="ghost" id="clearFilters">Clear</button>
+    </form>
+    <p class="muted" id="leadCount"></p>
+    <div class="scroll"><table class="table" id="leadTable"></table></div>
+    <div class="pager">
+      <button type="button" class="ghost" id="prevPage">Previous</button>
+      <span id="pageInfo" class="muted"></span>
+      <button type="button" class="ghost" id="nextPage">Next</button>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  Delivery is verified by reading the destination sheet. A workflow that ran successfully is not counted unless its row is in the sheet.
+  Counts use unique Record IDs. No credentials are used. On the public copy, data comes only from the file you choose.
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
